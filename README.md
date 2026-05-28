@@ -23,6 +23,10 @@ preservation, net charge source, applied caps, etc.).
 
 ## Installation
 
+The detailed installation and environment setup guide is available here:
+
+[Installation and environment setup guide](Installation/environment_setup.md)
+
 The pipeline shells out to a number of standard tools. Make sure these are
 on `PATH` (or set the relevant environment variables for the RESP backend,
 see below):
@@ -42,7 +46,6 @@ see below):
 `AMBERHOME` must be set so the parameter database can be located.
 
 ---
-
 ## Quick start
 
 ### Single residue
