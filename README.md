@@ -174,13 +174,13 @@ out/
 │   ├── residue.mol2            # exact copy / PyMOL conversion of the input
 │   ├── residue_capped.mol2     # post-PyMOL capping (ACE/NME or OXT preserved)
 │   ├── MVA.mol2                # with partial charges
-│   ├── MLY.ac
-│   ├── MLY.mc
-│   ├── MLY.prepin
-│   ├── MLY_ff19SB.frcmod
-│   ├── MLY_gaff2.frcmod
-│   ├── MLY.lib
-│   ├── MLY.log                 # AMBER toolchain log
+│   ├── MVA.ac
+│   ├── MVA.mc
+│   ├── MVA.prepin
+│   ├── MVA_ff19SB.frcmod
+│   ├── MVA_gaff2.frcmod
+│   ├── MVA.lib
+│   ├── MVA.log                 # AMBER toolchain log
 │   └── residue_meta.json       # single consolidated metadata file
 ├── failed/                     # created only if there were failures
 │   └── BAD/                    # full working folder of any failed residue
@@ -225,21 +225,26 @@ so the residue's free amine is preserved.
 
 ```
 topfor/
-├── main.py                        CLI entry point
-├── README.md                      (this file)
-├── MVA.mol2                       Working example of N-methylated Valine
-├── MVA/                           Parameters and topology folder
 ├── examples/
 │   └── residue_map.json           map schema + worked example
-└── modules/
-    ├── __init__.py
-    ├── residue_processor.py       Stage 1 (capping + charges)
-    ├── peptide_splitter.py        peptide -> per-residue extractor
-    ├── capping.py                 PyMOL ACE/NME capping (OXT-aware)
-    ├── pdb_to_mol2.py             PyMOL PDB -> MOL2 helper
-    ├── prepgen_writer.py          prepgen .mc control file writer
-    ├── antechamber_runner.py      Stage 2 (AMBER toolchain)
-    ├── resp_workflow.py           xTB + ORCA + Multiwfn RESP backend
-    └── mol2_utils.py              MOL2 parsing, validation, helpers
+├── Installation/
+│   ├── environment.yml
+│   ├── environment_setup.md
+│   └── setup_env.sh
+├── modules/
+│   ├── __init__.py
+│   ├── residue_processor.py       Stage 1 (capping + charges)
+│   ├── peptide_splitter.py        peptide -> per-residue extractor
+│   ├── capping.py                 PyMOL ACE/NME capping (OXT-aware)
+│   ├── pdb_to_mol2.py             PyMOL PDB -> MOL2 helper
+│   ├── prepgen_writer.py          prepgen .mc control file writer
+│   ├── antechamber_runner.py      Stage 2 (AMBER toolchain)
+│   ├── resp_workflow.py           xTB + ORCA + Multiwfn RESP backend
+│   └── mol2_utils.py              MOL2 parsing, validation, helpers                      
+├── test/ 
+│   ├── MVA.mol2                      Working example of N-methylated Valine
+│   └── MVA/                          Parameters and topology folder  
+├── main.py
+├── README.md   
+└── topfor
 ```
-
