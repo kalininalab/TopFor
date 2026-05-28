@@ -1,123 +1,245 @@
-# TopFor
+﻿# TopFor
 
-TopFor is a command-line tool for generating AMBER parameters for non-standard amino acids (NSAA). It automates capping, charge calculation, and parameter file creation for use with AMBER force fields.
+AMBER parameter generation for **noncanonical amino acids (ncAAs)**.
 
----
+Given a residue MOL2 / PDB (or a whole peptide), `TopFor` produces a
+complete AMBER-ready parameter set:
 
-## Features
+```
+residue.mol2  ->  residue_capped.mol2  ->  RES.mol2 (with charges)
+                                      ->  RES.ac
+                                      ->  RES.mc
+                                      ->  RES.prepin
+                                      ->  RES_ff19SB.frcmod
+                                      ->  RES_gaff2.frcmod
+                                      ->  RES.lib
+```
 
-- **Single-file mode**: Process one MOL2 file at a time  
-- **Batch mode**: Process multiple MOL2 files via a text file list  
-- **Automated pipeline**: Capping, Antechamber, TLeap, PREPGEN, and PARMCHK2 steps are chained automatically  
-
----
-
-## Requirements
-
-- **Operating System**: Linux, macOS, or Windows with WSL/Git Bash  
-- **AMBER Tools**: `antechamber`, `tleap`, `prepgen`, `parmchk2` installed and in your PATH  
-- **Conda**: Miniforge or Anaconda installed  
+It also writes a single consolidated `residue_meta.json` per residue
+documenting every decision the pipeline made (head/tail atoms, OXT
+preservation, net charge source, applied caps, etc.).
 
 ---
 
 ## Installation
 
-### 1. Clone the repository
+The pipeline shells out to a number of standard tools. Make sure these are
+on `PATH` (or set the relevant environment variables for the RESP backend,
+see below):
 
-```bash
-git clone git@github.com:Heshine-G/TopFor.git
-cd TopFor
-```
+| Tool                | Required for                          |
+|---------------------|---------------------------------------|
+| `antechamber`       | always                                |
+| `prepgen`           | always (AMBER toolchain stage)        |
+| `parmchk2`          | always (AMBER toolchain stage)        |
+| `tleap`             | always (AMBER toolchain stage)        |
+| `pymol`             | always (capping + PDB->MOL2)          |
+| `xtb`               | only when `--charge resp`             |
+| `orca`, `orca_2mkl` | only when `--charge resp`             |
+| `Multiwfn_noGUI`    | only when `--charge resp`             |
+| Python 3.10+        | always                                |
 
-### 2. Create and activate the conda environment
-
-```bash
-conda create -n paramgen python=3.10 numpy pandas rdkit pymol-open-source ambertools -c conda-forge
-conda activate paramgen
-```
-
-### 3. Make the CLI launcher script executable
-
-```bash
-chmod +x topfor
-```
-
-### 4. Add the project directory to your PATH
-
-```bash
-echo 'export PATH="$PATH:$(pwd)"' >> ~/.bashrc
-source ~/.bashrc
-```
-
-> **Note**: If you clone elsewhere, replace `$(pwd)` with the absolute path.
+`AMBERHOME` must be set so the parameter database can be located.
 
 ---
 
-## Usage
+## Quick start
 
-### Single-file mode
-
-```bash
-topfor -i myresidue.mol2
-```
-
-### Batch mode via text file list
-
-1. Create a text file (e.g., `list.txt`) with one `.mol2` path per line  
-2. Run:
+### Single residue
 
 ```bash
-topfor -b list.txt
+topfor -i MVA.mol2
 ```
 
----
+### Several residues at once (shell glob)
 
-## Flags
-
-- `-i`, `--input` → Path to a single `.mol2` file  
-- `-b`, `--batch` → Glob pattern or `.txt` file containing `.mol2` paths  
-
----
-
-## Output
-
-For each input file `NAME.mol2`, the tool creates a directory `NAME/` containing:
-
-- `NAME.ac`, `NAME.mol2` → Charged structures  
-- `NAME.lib` → TLeap library  
-- `NAME.prepin` → PREPGEN input  
-- `NAME.mc` → MC file  
-- `NAME.frcmod`, `NAME_GAFF.frcmod`, `NAME_FF14SB.frcmod` → Parameter modification files  
-
----
-
-## Examples
+`-i` accepts multiple files, so the usual `*.mol2` shell glob works:
 
 ```bash
-# Single file
-topfor -i AIB.mol2
+topfor -i *.mol2
+```
 
+### Free amino acid (e.g. for a fragment that already has OXT and a free amine)
 
-# Batch via list
-echo "AIB.mol2" > list.txt
-echo "FGA.mol2" >> list.txt
-topfor -b list.txt
+```bash
+topfor -i MVA.mol2 --terminal both
+```
+
+### C-terminal residue of a peptide (keep OXT, skip NME cap)
+
+```bash
+topfor -i MVA.mol2 --terminal c
+```
+
+### N-terminal residue of a peptide (keep free amine, skip ACE cap)
+
+```bash
+topfor -i MVA.mol2 --terminal n
+```
+
+### Peptide mode
+
+Extract every non-standard residue from a peptide and parameterize each.
+Terminal residues are detected automatically: the C-terminal residue keeps its OXT, the N-terminal residue keeps its free amine, and internal residues are capped with ACE/NME for charge derivation.
+
+```bash
+topfor -p peptide.pdb
+```
+
+### Batch mode
+
+`-b` accepts any combination of:
+
+- a directory (all `.mol2` and `.pdb` inside it are processed),
+- a plain-text list file (one path per line, `#` for comments),
+- a glob pattern (quoted, so the shell does not pre-expand it).
+
+```bash
+topfor -b residues/
+topfor -b mol2_files.txt
+topfor -b "data/*.mol2"
+topfor -b residues/ "extra/*.mol2"     # multiple args concatenated
+```
+
+### Choosing a charge model
+
+```bash
+topfor -i MVA.mol2 -c abcg2     # default
+topfor -i MVA.mol2 -c bcc
+topfor -i MVA.mol2 -c gas
+topfor -i MVA.mol2 -c resp      # needs xTB + ORCA + Multiwfn
+```
+
+### Choosing force fields
+
+```bash
+topfor -i MVA.mol2 -bb ff19SB -sc gaff2   # default
+topfor -i MVA.mol2 -bb ff14SB -sc gaff
+```
+
+### Residue map
+
+Hand-curated overrides for tricky residues live in a JSON file passed via
+`--map`. A working example is at `examples/residue_map.json`:
+
+```json
+{
+  "MVA": {
+    "head": "N",
+    "tail": "C",
+    "mainchain": ["CA"],
+    "net_charge": 0,
+    "pre_head_type": "C",
+    "post_tail_type": "N"
+  },
+  "PCA": {
+    "head": "NONE",
+    "tail": "C",
+    "net_charge": 0
+  }
+}
+```
+
+Keys are residue names (case-insensitive on input, upper-cased internally).
+Values are dicts with any of the following optional fields:
+
+| Field            | Meaning                                                          |
+|------------------|------------------------------------------------------------------|
+| `head`           | Head atom name. Use `"NONE"` to skip ACE capping.                |
+| `tail`           | Tail atom name. Use `"NONE"` to skip NME capping.                |
+| `mainchain`      | Ordered list of atom names between head and tail.                |
+| `net_charge`     | Integer net charge for this residue. Overrides auto-detection.   |
+| `pre_head_type`  | AMBER atom-type symbol expected upstream of `head` (default "C").|
+| `post_tail_type` | AMBER atom-type symbol expected downstream of `tail` (default "N"). |
+
+Anything missing falls back to topology detection + connectivity inference,
+so the map only needs to contain real exceptions.
+
+Run the tool with the map:
+
+```bash
+topfor -i MVA.mol2 --map examples/residue_map.json
 ```
 
 ---
 
-## Troubleshooting
+## Output structure
 
-- **`bash: topfor: command not found`**  
-  Ensure:
-  ```bash
-  chmod +x topfor
-  ```
-  and your repo folder is added to PATH.
+For each input residue, a folder is created under `--out/-o` (default: current
+directory):
 
-- **CRLF errors**  
-  Convert script to LF line endings:
-  ```bash
-  dos2unix topfor
-  ```
-  Or in VS Code: click the CRLF indicator (bottom-right) → select **LF**
+```
+out/
+├── MVA/
+│   ├── residue.mol2            # exact copy / PyMOL conversion of the input
+│   ├── residue_capped.mol2     # post-PyMOL capping (ACE/NME or OXT preserved)
+│   ├── MVA.mol2                # with partial charges
+│   ├── MLY.ac
+│   ├── MLY.mc
+│   ├── MLY.prepin
+│   ├── MLY_ff19SB.frcmod
+│   ├── MLY_gaff2.frcmod
+│   ├── MLY.lib
+│   ├── MLY.log                 # AMBER toolchain log
+│   └── residue_meta.json       # single consolidated metadata file
+├── failed/                     # created only if there were failures
+│   └── BAD/                    # full working folder of any failed residue
+└── successful_residues.txt
+└── failed_residues.txt
+```
+
+`successful_residues.txt` and `failed_residues.txt` each contain one residue
+name per line, suitable for downstream scripting.
+
+The single consolidated `residue_meta.json` includes (among others):
+
+- `RES`, `head_name`, `tail_name`, `main_chain`, `net_charge`,
+  `charge_model`, `topology`, `applied_caps`
+- `preserve_oxt` / `oxt_preserved` — whether OXT was kept for a terminal residue
+- `terminal_mode` — the `--terminal` flag that was active
+- `is_polymer_internal` / `is_n_terminal_like` / `is_c_terminal_like` —
+  peptide-mode topology classification
+- `charge_backend_meta` — paths and provenance from the charge-assignment stage
+- `validation_warnings` — any sanity-check messages from the molecule validator
+
+---
+
+## Why `--terminal` matters
+
+C-terminal residues of a linear peptide carry an **OXT** atom that is needed
+for proper hydrogen bonding and to match the chemical reality of the system.
+A bare residue extracted from such a peptide must therefore **keep** its
+OXT and must **not** be NME-capped, adding NME on top of OXT produces a
+geometrically broken topology, and removing OXT to attach NME destroys
+chemistry that the parameter set is supposed to represent.
+
+In peptide mode (`-p`), the splitter detects this automatically and tells
+the capping step to preserve OXT. In single-residue mode (`-i`), the user
+must say so explicitly with `--terminal c` (C-terminal) or `--terminal both`
+(free amino acid). For N-terminal residues, `--terminal n` skips ACE capping
+so the residue's free amine is preserved.
+
+---
+
+## Module map
+
+```
+topfor/
+├── main.py                        CLI entry point
+├── README.md                      (this file)
+├── MVA.mol2                       Working example of N-methylated Valine
+├── MVA/                           Parameters and topology folder
+├── examples/
+│   └── residue_map.json           map schema + worked example
+└── modules/
+    ├── __init__.py
+    ├── residue_processor.py       Stage 1 (capping + charges)
+    ├── peptide_splitter.py        peptide -> per-residue extractor
+    ├── capping.py                 PyMOL ACE/NME capping (OXT-aware)
+    ├── pdb_to_mol2.py             PyMOL PDB -> MOL2 helper
+    ├── prepgen_writer.py          prepgen .mc control file writer
+    ├── antechamber_runner.py      Stage 2 (AMBER toolchain)
+    ├── resp_workflow.py           xTB + ORCA + Multiwfn RESP backend
+    └── mol2_utils.py              MOL2 parsing, validation, helpers
+```
+

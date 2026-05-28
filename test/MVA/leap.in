@@ -1,0 +1,8 @@
+source leaprc.protein.ff19SB
+source leaprc.gaff2
+loadamberparams MVA_ff19SB.frcmod
+loadamberparams MVA_gaff2.frcmod
+MVA = loadmol2 MVA.mol2
+saveoff MVA MVA.lib
+saveamberparm MVA MVA.prmtop MVA.inpcrd
+quit

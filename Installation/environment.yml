@@ -1,0 +1,121 @@
+# TopFor – Conda Environment
+# ============================================================
+# Creates a self-contained environment for running TopFor
+# (AMBER force-field parameter generation for noncanonical
+# amino acids).
+#
+# CREATE:
+#   conda env create -f environment.yml
+#   conda activate topfor
+#
+# UPDATE (if you already have the env):
+#   conda env update -f environment.yml --prune
+#
+# After activation, set the required env var:
+#   export AMBERHOME="$CONDA_PREFIX"
+#
+# ⚠  Three tools for the optional RESP pathway
+#    (--charge resp) are NOT available on conda and must be
+#    installed separately – see the comments at the bottom.
+# ============================================================
+
+name: topfor
+
+channels:
+  - conda-forge        # primary source for all packages below
+  - defaults           # fallback only; lower priority
+
+dependencies:
+
+  # ── Python runtime ───────────────────────────────────────
+  # 3.10+ is required; the codebase uses built-in generic
+  # type hints (list[str], tuple[int, ...]) and match/case
+  # patterns that were introduced in Python 3.10.
+  - python=3.10
+
+  # ── PyMOL (open-source build) ────────────────────────────
+  # Used by capping.py (ACE/NME attachment, h_add, OXT
+  # handling) and pdb_to_mol2.py (PDB → MOL2 conversion).
+  # The open-source build is fully sufficient; the incentive /
+  # commercial build is NOT required.
+  - pymol-open-source
+
+  # ── AmberTools ───────────────────────────────────────────
+  # Provides every AMBER binary the pipeline calls:
+  #   antechamber  – atom typing + charge assignment
+  #   prepgen      – residue template (.prepin) generation
+  #   parmchk2     – missing-parameter detection (.frcmod)
+  #   sqm          – semi-empirical QM backend for AM1-BCC /
+  #                  ABCG2 / Gasteiger charges
+  #   tleap        – AMBER library (.lib) generation
+  # Also provides the parameter databases that parmchk2 reads
+  # (parm19.dat, parm10.dat, gaff2.dat, etc.) under
+  # $CONDA_PREFIX/dat/leap/parm/.
+  - ambertools>=23
+
+  # ── pexpect ──────────────────────────────────────────────
+  # Required ONLY when --charge resp is used.
+  # Drives the interactive Multiwfn session from Python
+  # (spawns Multiwfn_noGUI as a child process and responds
+  # to its menu prompts programmatically).
+  - pexpect
+
+  # ── xTB ──────────────────────────────────────────────────
+  # Required ONLY when --charge resp is used.
+  # GFN2-xTB semi-empirical pre-optimiser: relaxes the
+  # PyMOL-capped geometry before the expensive ORCA HF/6-31G*
+  # optimisation, cutting total wall-clock time by 30–50 %.
+  # Set NSAA_XTB_EXE if you want to pin a specific binary
+  # rather than relying on PATH resolution.
+  - xtb
+
+
+# ============================================================
+# MANUAL INSTALLATIONS REQUIRED FOR --charge resp
+# ============================================================
+# The two programs below are NOT on conda-forge.  They must be
+# downloaded and installed by hand, then pointed at via the
+# environment variables shown.
+#
+# 1. ORCA  (quantum-chemistry engine)
+#    Download: https://orcaforum.kofo.mpg.de  (free for academia,
+#              requires registration + EULA acceptance)
+#    Install:  tar -xf orca_*.tar.xz -C ~/software/
+#    Configure:
+#      export NSAA_ORCA_EXE="$HOME/software/orca_6.x.x/orca"
+#      export NSAA_ORCA_2MKL_EXE="$HOME/software/orca_6.x.x/orca_2mkl"
+#      export LD_LIBRARY_PATH="$HOME/software/orca_6.x.x/lib:$LD_LIBRARY_PATH"
+#    Notes:  Use the _shared_openmpiNNN build.  Install the matching
+#            OpenMPI version via your system package manager:
+#              sudo apt install openmpi-bin libopenmpi-dev   # Debian/Ubuntu
+#              sudo dnf install openmpi openmpi-devel        # RHEL/Fedora
+#
+# 2. Multiwfn  (wavefunction analyser + RESP fitter)
+#    Download: http://sobereva.com/multiwfn/
+#              Get the _noGUI Linux build (Multiwfn_*_bin_Linux_noGUI.zip)
+#    Install:  unzip Multiwfn_*.zip -d ~/software/multiwfn/
+#              chmod +x ~/software/multiwfn/Multiwfn_noGUI
+#    Configure:
+#      export NSAA_MULTIWFN_EXE="$HOME/software/multiwfn/Multiwfn_noGUI"
+#      export Multiwfnpath="$HOME/software/multiwfn"   # for settings.ini
+#    Notes:  Edit settings.ini and set  nthreads = <your CPU count>
+#            Cite Lu & Chen (J. Comput. Chem. 2012) and Lu (J. Chem. Phys. 2024).
+#
+# ============================================================
+# ENVIRONMENT VARIABLES SUMMARY
+# ============================================================
+# Required always:
+#   AMBERHOME="$CONDA_PREFIX"
+#
+# Required only for --charge resp:
+#   NSAA_XTB_EXE       absolute path to xtb binary
+#   NSAA_ORCA_EXE      absolute path to orca binary
+#   NSAA_ORCA_2MKL_EXE absolute path to orca_2mkl binary
+#   NSAA_MULTIWFN_EXE  absolute path to Multiwfn_noGUI binary
+#   Multiwfnpath       directory containing Multiwfn settings.ini
+#   LD_LIBRARY_PATH    must include ORCA's lib/ directory
+#
+# Optional:
+#   NSAA_RESP_NPROCS         number of ORCA MPI processes (default: 4)
+#   NSAA_RESP_MULTIPLICITY   spin multiplicity override (default: auto)
+# ============================================================

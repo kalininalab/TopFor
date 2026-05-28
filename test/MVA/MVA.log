@@ -1,0 +1,149 @@
+
+
+=== CMD ===
+antechamber -i MVA.mol2 -fi mol2 -o MVA.ac -fo ac -at amber -nc 0
+=== STDOUT ===
+Info: acdoctor mode is on: check and diagnose problems in the input file.
+Info: The atom type is set to amber; the options available to the -at flag are
+      gaff, gaff2, amber, bcc, abcg2, and sybyl.
+
+-- Check Format for mol2 File --
+   Status: pass
+
+---Judge bond type for Residue 1 with ID of 1 and Name of ACE ---
+
+---Judge bond type for Residue 2 with ID of 2 and Name of MVA ---
+
+---Judge bond type for Residue 3 with ID of 3 and Name of NME ---
+
+
+=== STDERR ===
+
+=== RETURN CODE ===
+0
+
+
+=== CMD ===
+prepgen -i MVA.ac -o MVA.prepin -m MVA.mc -rn MVA
+=== STDOUT ===
+
+PRE_HEAD_TYPE is     C
+POST_TAIL_TYPE is     N
+Net charge of truncated molecule is     0.00
+HEAD_ATOM      7    N
+TAIL_ATOM      9    C
+MAIN_CHAIN     1    7    N
+MAIN_CHAIN     2    8   CA
+MAIN_CHAIN     3    9    C
+OMIT_ATOM      1    1  CC1
+OMIT_ATOM      2    2  OC2
+OMIT_ATOM      3    3  CC3
+OMIT_ATOM      4    4  HC4
+OMIT_ATOM      5    5  HC5
+OMIT_ATOM      6    6  HC6
+OMIT_ATOM      7   26  NM1
+OMIT_ATOM      8   27  CM2
+OMIT_ATOM      9   28  HM3
+OMIT_ATOM     10   29  HM4
+OMIT_ATOM     11   30  HM5
+OMIT_ATOM     12   31  HM6
+Number of mainchain atoms (including head and tail atom):     3
+Number of omited atoms:    12
+=== STDERR ===
+
+=== RETURN CODE ===
+0
+
+
+=== CMD ===
+parmchk2 -i MVA.ac -f ac -o MVA_ff19SB.frcmod -a Y -p /home/heshine/miniforge3/envs/paramgen/dat/leap/parm/parm19.dat
+=== STDOUT ===
+
+=== STDERR ===
+
+=== RETURN CODE ===
+0
+
+
+=== CMD ===
+parmchk2 -i MVA.ac -f ac -o MVA_gaff2.frcmod -a Y -p /home/heshine/miniforge3/envs/paramgen/dat/leap/parm/gaff2.dat
+=== STDOUT ===
+
+=== STDERR ===
+
+=== RETURN CODE ===
+0
+
+
+=== CMD ===
+tleap -f leap.in
+=== STDOUT ===
+-I: Adding /home/heshine/miniforge3/envs/paramgen/dat/leap/prep to search path.
+-I: Adding /home/heshine/miniforge3/envs/paramgen/dat/leap/lib to search path.
+-I: Adding /home/heshine/miniforge3/envs/paramgen/dat/leap/parm to search path.
+-I: Adding /home/heshine/miniforge3/envs/paramgen/dat/leap/cmd to search path.
+-f: Source leap.in.
+
+Welcome to LEaP!
+(no leaprc in search path)
+Sourcing: ./leap.in
+----- Source: /home/heshine/miniforge3/envs/paramgen/dat/leap/cmd/leaprc.protein.ff19SB
+----- Source of /home/heshine/miniforge3/envs/paramgen/dat/leap/cmd/leaprc.protein.ff19SB done
+Log file: ./leap.log
+Loading parameters: /home/heshine/miniforge3/envs/paramgen/dat/leap/parm/parm19.dat
+Reading title:
+PARM99 + frcmod.ff99SB + frcmod.parmbsc0 + OL3 for RNA + ff19SB
+Loading parameters: /home/heshine/miniforge3/envs/paramgen/dat/leap/parm/frcmod.ff19SB
+Reading force field modification type file (frcmod)
+Reading title:
+ff19SB AA-specific backbone CMAPs for protein 07/25/2019
+Loading library: /home/heshine/miniforge3/envs/paramgen/dat/leap/lib/amino19.lib
+Loading library: /home/heshine/miniforge3/envs/paramgen/dat/leap/lib/aminoct12.lib
+Loading library: /home/heshine/miniforge3/envs/paramgen/dat/leap/lib/aminont12.lib
+----- Source: /home/heshine/miniforge3/envs/paramgen/dat/leap/cmd/leaprc.gaff2
+----- Source of /home/heshine/miniforge3/envs/paramgen/dat/leap/cmd/leaprc.gaff2 done
+Log file: ./leap.log
+Loading parameters: /home/heshine/miniforge3/envs/paramgen/dat/leap/parm/gaff2.dat
+Reading title:
+AMBER General Force Field for organic molecules (Version 2.2.20, March 2021)
+Loading parameters: ./MVA_ff19SB.frcmod
+Reading force field modification type file (frcmod)
+Reading title:
+Remark line goes here
+Loading parameters: ./MVA_gaff2.frcmod
+Reading force field modification type file (frcmod)
+Reading title:
+Remark line goes here
+Loading Mol2 file: ./MVA.mol2
+Reading MOLECULE named 8ciy
+ Creating MVA.lib
+Building topology.
+Building atom parameters.
+Checking Unit.
+Building topology.
+Building atom parameters.
+Building bond parameters.
+Building angle parameters.
+Building proper torsion parameters.
+Building improper torsion parameters.
+ total 4 improper torsions applied
+Building H-Bond parameters.
+Incorporating Non-Bonded adjustments.
+Not Marking per-residue atom chain types.
+Marking per-residue atom chain types.
+  (Residues lacking connect0/connect1 - 
+   these don't have chain types marked:
+
+	res	total affected
+
+	ACE	1
+  )
+ (no restraints)
+	Quit
+
+Exiting LEaP: Errors = 0; Warnings = 0; Notes = 0.
+
+=== STDERR ===
+
+=== RETURN CODE ===
+0

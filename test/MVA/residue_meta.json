@@ -1,0 +1,49 @@
+{
+  "resname": "MVA",
+  "head_name": "N",
+  "tail_name": "C",
+  "main_chain": [
+    "CA"
+  ],
+  "pre_head_type": "C",
+  "post_tail_type": "N",
+  "preserve_oxt": false,
+  "terminal_mode": "none",
+  "requested_head_name": "N",
+  "requested_tail_name": "C",
+  "oxt_preserved": false,
+  "has_head": true,
+  "has_tail": true,
+  "applied_caps": [
+    "ACE",
+    "NME"
+  ],
+  "net_charge": 0,
+  "net_charge_source": "amino_acid_like_neutral_backbone",
+  "charge_model": "abcg2",
+  "charge_backend_meta": {
+    "charge_method": "abcg2",
+    "charge_backend": "antechamber",
+    "net_charge": 0,
+    "files": {
+      "input_mol2": "/mnt/d/topfor_script/test/MVA/residue_capped.mol2",
+      "output_mol2": "/mnt/d/topfor_script/test/MVA/MVA.mol2"
+    }
+  },
+  "validation_warnings": [],
+  "source_input": null,
+  "source_subst_id": null,
+  "source_subst_name": null,
+  "external_bonds": [],
+  "is_polymer_internal": false,
+  "is_n_terminal_like": false,
+  "is_c_terminal_like": false,
+  "is_cyclic_like": false,
+  "topology": null,
+  "has_oxt": null,
+  "has_n_terminal_protons": null,
+  "raw_head_name": null,
+  "raw_tail_name": null,
+  "full_context_net_charge": null,
+  "full_context_charge_source": null
+}

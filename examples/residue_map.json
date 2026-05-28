@@ -1,0 +1,34 @@
+{
+  "MLY": {
+    "head": "N",
+    "tail": "C",
+    "mainchain": ["CA"],
+    "net_charge": 1,
+    "pre_head_type": "C",
+    "post_tail_type": "N"
+  },
+
+  "PCA": {
+    "head": "NONE",
+    "tail": "C",
+    "net_charge": 0,
+    "pre_head_type": "C",
+    "post_tail_type": "N"
+  },
+
+  "SEP": {
+    "head": "N",
+    "tail": "C",
+    "mainchain": ["CA"],
+    "net_charge": -2
+  },
+
+  "ACE_NME_CAPPED_EXAMPLE": {
+    "head": "N",
+    "tail": "C",
+    "mainchain": ["CA", "CB"],
+    "net_charge": 0,
+    "pre_head_type": "C",
+    "post_tail_type": "N"
+  }
+}

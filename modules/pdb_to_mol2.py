@@ -1,17 +1,34 @@
+"""
+pdb_to_mol2
+===========
+
+Stand-alone PyMOL script that converts a PDB file to a MOL2 file.
+
+Invoked as a subprocess (so it runs inside the PyMOL Python interpreter):
+
+    python pdb_to_mol2.py <input.pdb> <output.mol2>
+
+Exit codes
+----------
+    0  success
+    1  bad CLI arguments or missing input
+    2  PyMOL not importable in the current interpreter
+"""
 from __future__ import annotations
 
 import sys
 from pathlib import Path
 
 try:
-    import pymol  
+    import pymol  # type: ignore
 except Exception:
     pymol = None
 
 
 def main() -> int:
     if pymol is None:
-        print("ERROR: PyMOL is not available in this Python environment. Install/enable PyMOL to use pdb_to_mol2.")
+        print("ERROR: PyMOL is not available in this Python environment. "
+              "Install/enable PyMOL to use pdb_to_mol2.")
         return 2
 
     pymol.finish_launching(["pymol", "-cq"])
@@ -27,11 +44,11 @@ def main() -> int:
         print(f"ERROR: {input_pdb} not found!")
         return 1
 
-    pymol.cmd.reinitialize()  
-    pymol.cmd.load(str(input_pdb), "prot")  
-    pymol.cmd.remove("hydro")  
-    pymol.cmd.h_add("prot")  
-    pymol.cmd.save(str(output_mol2), "prot")  
+    pymol.cmd.reinitialize()
+    pymol.cmd.load(str(input_pdb), "prot")
+    pymol.cmd.remove("hydro")
+    pymol.cmd.h_add("prot")
+    pymol.cmd.save(str(output_mol2), "prot")
     print(f"Conversion successful: {output_mol2}")
     return 0
 

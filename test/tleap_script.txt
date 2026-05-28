@@ -1,0 +1,18 @@
+source leaprc.protein.ff19SB
+source leaprc.gaff2
+loadamberprep MVA.prepin
+loadamberparams MVA_gaff2.frcmod
+loadamberparams MVA_ff19SB.frcmod
+seq = sequence { ALA MVA PHE }
+savepdb seq seq.pdb
+saveamberparm seq seq.prmtop seq.inpcrd
+seq1 = sequence { ALA MVA PHE }
+savepdb seq1 seq1.pdb
+saveamberparm seq1 seq1.prmtop seq1.inpcrd
+seq2 = sequence { PHE ALA MVA }
+savepdb seq2 seq2.pdb
+saveamberparm seq2 seq2.prmtop seq2.inpcrd
+
+
+
+
