@@ -22,8 +22,8 @@
 name: topfor
 
 channels:
-  - conda-forge        # primary source for all packages below
-  - defaults           # fallback only; lower priority
+  - conda-forge        # all TopFor packages below are sourced here
+  - nodefaults          # avoid mixing defaults/conda-forge binary stacks
 
 dependencies:
 
@@ -65,7 +65,7 @@ dependencies:
   # GFN2-xTB semi-empirical pre-optimiser: relaxes the
   # PyMOL-capped geometry before the expensive ORCA HF/6-31G*
   # optimisation, cutting total wall-clock time by 30–50 %.
-  # Set NSAA_XTB_EXE if you want to pin a specific binary
+  # Set NCAA_XTB_EXE if you want to pin a specific binary
   # rather than relying on PATH resolution.
   - xtb
 
@@ -82,8 +82,8 @@ dependencies:
 #              requires registration + EULA acceptance)
 #    Install:  tar -xf orca_*.tar.xz -C ~/software/
 #    Configure:
-#      export NSAA_ORCA_EXE="$HOME/software/orca_6.x.x/orca"
-#      export NSAA_ORCA_2MKL_EXE="$HOME/software/orca_6.x.x/orca_2mkl"
+#      export NCAA_ORCA_EXE="$HOME/software/orca_6.x.x/orca"
+#      export NCAA_ORCA_2MKL_EXE="$HOME/software/orca_6.x.x/orca_2mkl"
 #      export LD_LIBRARY_PATH="$HOME/software/orca_6.x.x/lib:$LD_LIBRARY_PATH"
 #    Notes:  Use the _shared_openmpiNNN build.  Install the matching
 #            OpenMPI version via your system package manager:
@@ -96,7 +96,7 @@ dependencies:
 #    Install:  unzip Multiwfn_*.zip -d ~/software/multiwfn/
 #              chmod +x ~/software/multiwfn/Multiwfn_noGUI
 #    Configure:
-#      export NSAA_MULTIWFN_EXE="$HOME/software/multiwfn/Multiwfn_noGUI"
+#      export NCAA_MULTIWFN_EXE="$HOME/software/multiwfn/Multiwfn_noGUI"
 #      export Multiwfnpath="$HOME/software/multiwfn"   # for settings.ini
 #    Notes:  Edit settings.ini and set  nthreads = <your CPU count>
 #            Cite Lu & Chen (J. Comput. Chem. 2012) and Lu (J. Chem. Phys. 2024).
@@ -108,14 +108,14 @@ dependencies:
 #   AMBERHOME="$CONDA_PREFIX"
 #
 # Required only for --charge resp:
-#   NSAA_XTB_EXE       absolute path to xtb binary
-#   NSAA_ORCA_EXE      absolute path to orca binary
-#   NSAA_ORCA_2MKL_EXE absolute path to orca_2mkl binary
-#   NSAA_MULTIWFN_EXE  absolute path to Multiwfn_noGUI binary
+#   NCAA_XTB_EXE       absolute path to xtb binary
+#   NCAA_ORCA_EXE      absolute path to orca binary
+#   NCAA_ORCA_2MKL_EXE absolute path to orca_2mkl binary
+#   NCAA_MULTIWFN_EXE  absolute path to Multiwfn_noGUI binary
 #   Multiwfnpath       directory containing Multiwfn settings.ini
 #   LD_LIBRARY_PATH    must include ORCA's lib/ directory
 #
 # Optional:
-#   NSAA_RESP_NPROCS         number of ORCA MPI processes (default: 4)
-#   NSAA_RESP_MULTIPLICITY   spin multiplicity override (default: auto)
+#   NCAA_RESP_NPROCS         number of ORCA MPI processes (default: 4)
+#   NCAA_RESP_MULTIPLICITY   spin multiplicity override (default: auto)
 # ============================================================

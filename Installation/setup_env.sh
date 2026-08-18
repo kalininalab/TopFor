@@ -76,6 +76,7 @@ check_exe "antechamber" "AMBER atom typing + charge assignment"
 check_exe "prepgen"     "residue template (.prepin) generation"
 check_exe "parmchk2"    "missing parameter detection (.frcmod)"
 check_exe "tleap"       "AMBER library (.lib) generation"
+check_exe "sqm"         "semi-empirical QM backend for charge assignment"
 
 # pymol has no version flag on PATH; test via python import
 if python -c "import pymol" &>/dev/null 2>&1; then
@@ -105,7 +106,7 @@ check_resp_exe() {
         if [[ -x "$resolved" ]]; then
             ok "$name  –  $purpose  (via $envvar)"
         else
-            fail "$name  –  $purpose  (${envvar}=${resolved} not executable)"
+            warn "$name  –  $purpose  (${envvar}=${resolved} not executable; optional RESP tool)"
         fi
     elif command -v "$name" &>/dev/null; then
         ok "$name  –  $purpose  (found on PATH)"
@@ -136,7 +137,7 @@ echo ""
 echo "────────────────────────────────────────────────"
 if [[ $ERRORS -eq 0 ]]; then
     echo -e "${GRN}${BLD}All required tools verified.${RST}"
-    echo -e "You can now run:  ${BLD}python main.py -p peptide.mol2${RST}"
+    echo -e "Normal TopFor environment checks passed."
 else
     echo -e "${RED}${BLD}$ERRORS required tool(s) missing.${RST}"
     echo "  Ensure ambertools and pymol-open-source installed:"

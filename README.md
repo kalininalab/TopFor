@@ -1,4 +1,4 @@
-﻿# TopFor
+# TopFor
 
 AMBER parameter generation for **noncanonical amino acids (ncAAs)**.
 
@@ -47,6 +47,21 @@ see below):
 
 ---
 ## Quick start
+
+### Add `topfor` to PATH
+
+Instead of running:
+
+```bash
+python main.py -i MVA.mol2
+```
+make the launcher executable and add the TopFor directory to your `PATH`:
+
+```bash
+chmod +x topfor
+export PATH="/path/to/topfor:$PATH"
+```
+Add the `export` line to `~/.bashrc` to make it permanent.
 
 ### Single residue
 
@@ -107,8 +122,8 @@ topfor -b residues/ "extra/*.mol2"     # multiple args concatenated
 ### Choosing a charge model
 
 ```bash
-topfor -i MVA.mol2 -c abcg2     # default
-topfor -i MVA.mol2 -c bcc
+topfor -i MVA.mol2 -c bcc     # default
+topfor -i MVA.mol2 -c abcg2
 topfor -i MVA.mol2 -c gas
 topfor -i MVA.mol2 -c resp      # needs xTB + ORCA + Multiwfn
 ```
@@ -120,6 +135,12 @@ topfor -i MVA.mol2 -bb ff19SB -sc gaff2   # default
 topfor -i MVA.mol2 -bb ff14SB -sc gaff
 ```
 
+### Specifying the residue net charge
+
+```bash
+topfor -i MVA.mol2 -nc 0
+```
+ 
 ### Residue map
 
 Hand-curated overrides for tricky residues live in a JSON file passed via
@@ -245,8 +266,8 @@ topfor/
 │   ├── resp_workflow.py           xTB + ORCA + Multiwfn RESP backend
 │   └── mol2_utils.py              MOL2 parsing, validation, helpers                      
 ├── test/ 
-│   ├── MVA.mol2                      Working example of N-methylated Valine
-│   └── MVA/                          Parameters and topology folder  
+│   ├── MVA.mol2                   Working example of N-methylated Valine
+│   └── MVA/                       Parameters and topology folder  
 ├── main.py
 ├── README.md   
 └── topfor

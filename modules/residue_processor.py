@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any, Optional
 
@@ -76,7 +77,7 @@ class NonStandardAminoAcidProcessor:
     def __init__(
         self,
         input_file: str,
-        charge_model: str = "abcg2",
+        charge_model: str = "bcc",
         residue_map: Optional[dict] = None,
         default_net_charge: int = 0,
         net_charge_override: Optional[int] = None,
@@ -155,6 +156,25 @@ class NonStandardAminoAcidProcessor:
                     parts = line.split()
                     if len(parts) >= 8:
                         return normalize_resname(parts[7])
+
+        if p.suffix.lower() == ".pdb":
+            # Use the residue name encoded in the PDB instead of assuming the
+            # filename is the residue name.  This keeps residue-map lookup,
+            # charge classification, and output naming correct for files such
+            # as ``input.pdb`` that actually contain e.g. MLY.
+            try:
+                for line in p.read_text(encoding="utf-8", errors="ignore").splitlines():
+                    if not line.startswith(("ATOM  ", "HETATM")):
+                        continue
+                    if len(line) >= 20:
+                        resn = line[17:20].strip()
+                        if resn:
+                            return normalize_resname(resn)
+                    parts = line.split()
+                    if len(parts) >= 4:
+                        return normalize_resname(parts[3])
+            except OSError:
+                pass
 
         return normalize_resname(p.stem)
 
@@ -271,16 +291,51 @@ class NonStandardAminoAcidProcessor:
 
         if suffix == ".pdb":
             convert_script = Path(__file__).parent / "pdb_to_mol2.py"
-            cmd = ["python", str(convert_script), str(input_path), str(residue_file)]
+            if not convert_script.exists():
+                raise FileNotFoundError(
+                    f"PDB converter script missing: {convert_script}"
+                )
+
+            # Use the exact interpreter that is running the pipeline instead
+            # of a PATH-dependent literal ``python`` executable.  This avoids
+            # accidentally launching the converter in a different environment
+            # where PyMOL is not importable.
+            cmd = [sys.executable, str(convert_script), str(input_path), str(residue_file)]
             result = self._run(cmd, cwd=residue_dir)
+            log_path = residue_dir / f"{residue_dir.name}.log"
             if result.returncode != 0:
-                log_path = residue_dir / f"{residue_dir.name}.log"
+                self._write_subprocess_log(
+                    log_path, stage="PDB_TO_MOL2", cmd=cmd, result=result,
+                )
+                detail = (result.stderr or result.stdout or "").strip().splitlines()
+                detail_text = detail[-1] if detail else f"exit code {result.returncode}"
+                raise RuntimeError(
+                    f"PDB conversion failed: {detail_text} (see {log_path})"
+                )
+
+            if not residue_file.exists() or residue_file.stat().st_size == 0:
                 self._write_subprocess_log(
                     log_path, stage="PDB_TO_MOL2", cmd=cmd, result=result,
                 )
                 raise RuntimeError(
-                    f"PDB conversion failed (see {log_path})"
+                    f"PDB converter returned success but did not create a non-empty "
+                    f"MOL2: {residue_file} (see {log_path})"
                 )
+
+            # Parse the generated file immediately so an invalid PyMOL export
+            # fails at the conversion stage rather than much later in capping
+            # or antechamber with a misleading error.
+            try:
+                validate_molecule(str(residue_file), check_parity=False)
+            except Exception as exc:
+                self._write_subprocess_log(
+                    log_path, stage="PDB_TO_MOL2", cmd=cmd, result=result,
+                )
+                raise RuntimeError(
+                    f"PDB converter produced an invalid MOL2: {exc} "
+                    f"(see {log_path})"
+                ) from exc
+
             return residue_file
 
         raise ValueError(f"Unsupported format: {input_path.suffix}")
@@ -630,7 +685,7 @@ class NonStandardAminoAcidProcessor:
         tail_arg = cfg["tail_name"] if cfg["tail_name"] else "NONE"
 
         cap_cmd = [
-            "python", str(cap_script), str(residue_dir),
+            sys.executable, str(cap_script), str(residue_dir),
             "--head", str(head_arg),
             "--tail", str(tail_arg),
             "--net-charge", str(int(net_charge)),

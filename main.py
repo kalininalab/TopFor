@@ -82,12 +82,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
                        help="Batch input: file list / directory / glob.")
 
     parser.add_argument("-t", "--terminal", choices=TERMINAL_CHOICES, default="none")
-    parser.add_argument("--backbone", "-bb",
+    parser.add_argument("--forcefield1", "-fa",
                         choices=["ff14SB", "ff19SB", "ff99SB"], default="ff19SB")
-    parser.add_argument("--sidechain", "-sc",
+    parser.add_argument("--forcefield2", "-fb",
                         choices=["gaff", "gaff2"], default="gaff2")
     parser.add_argument("--charge", "-c",
-                        choices=["gas", "bcc", "resp", "abcg2"], default="abcg2")
+                        choices=["gas", "bcc", "resp", "abcg2"], default="bcc")
     parser.add_argument("--gmx", "-gmx", action="store_true",
                         help="Also generate GROMACS .top/.gro for each "
                              "residue (and for the whole peptide in -p mode). "
@@ -268,8 +268,8 @@ def main() -> None:
     if charged_files:
         amber_result = run_antechamber_for_all(
             charged_files,
-            backbone=args.backbone,
-            sidechain=args.sidechain,
+            forcefield1=args.forcefield1,
+            forcefield2=args.forcefield2,
             charge=args.charge,
             generate_gmx=args.gmx,
         )
@@ -303,8 +303,8 @@ def main() -> None:
                     peptide_input=args.peptide,
                     successful_resnames=successful_resnames,
                     out_base=str(out_base),
-                    backbone=args.backbone,
-                    sidechain=args.sidechain,
+                    forcefield1=args.forcefield1,
+                    forcefield2=args.forcefield2,
                     generate_gmx=args.gmx,
                 )
                 if peptide_result.get("status") == "ok":
