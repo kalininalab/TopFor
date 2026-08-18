@@ -101,9 +101,9 @@ def _read_net_charge_for_residue(residue_dir: Path, mol2_path: Path) -> Tuple[in
 # ----------------------------------------------------------------------------
 def run_antechamber_for_all(
     mol2_files: List[str],
-    backbone: str = "ff19SB",
-    sidechain: str = "gaff2",
-    charge: str = "abcg2",
+    forcefield1: str = "ff19SB",
+    forcefield2: str = "gaff2",
+    charge: str = "bcc",
     generate_gmx: bool = False,
 ) -> Dict[str, List]:
     """
@@ -123,23 +123,23 @@ def run_antechamber_for_all(
             failed.append((resname, "AMBERHOME not set"))
         return {"successful": successful, "failed": failed}
 
-    backbone_map = {
+    forcefield1_map = {
         "ff19SB": "parm19.dat",
         "ff14SB": "parm10.dat",
         "ff99SB": "parm99.dat",
     }
-    sidechain_map = {
+    forcefield2_map = {
         "gaff": "gaff.dat",
         "gaff2": "gaff2.dat",
     }
 
-    if backbone not in backbone_map:
-        raise ValueError(f"Unsupported backbone: {backbone}")
-    if sidechain not in sidechain_map:
-        raise ValueError(f"Unsupported sidechain: {sidechain}")
+    if forcefield1 not in forcefield1_map:
+        raise ValueError(f"Unsupported forcefield1: {forcefield1}")
+    if forcefield2 not in forcefield2_map:
+        raise ValueError(f"Unsupported forcefield2: {forcefield2}")
 
-    backbone_parm_path = os.path.join(amberhome, "dat", "leap", "parm", backbone_map[backbone])
-    gaff_parm_path = os.path.join(amberhome, "dat", "leap", "parm", sidechain_map[sidechain])
+    ff_parm_path = os.path.join(amberhome, "dat", "leap", "parm", forcefield1_map[forcefield1])
+    gaff_parm_path = os.path.join(amberhome, "dat", "leap", "parm", forcefield2_map[forcefield2])
 
     # Lazy-import so the AMBER stage still runs if parmed is missing and
     # the user did not actually request --gmx.
@@ -167,8 +167,8 @@ def run_antechamber_for_all(
         prmtop_file = residue_dir / f"{resname}.prmtop"
         inpcrd_file = residue_dir / f"{resname}.inpcrd"
 
-        backbone_frcmod_output = residue_dir / f"{resname}_{backbone}.frcmod"
-        gaff_frcmod_output = residue_dir / f"{resname}_{sidechain}.frcmod"
+        ff_frcmod_output = residue_dir / f"{resname}_{forcefield1}.frcmod"
+        gaff_frcmod_output = residue_dir / f"{resname}_{forcefield2}.frcmod"
 
         net_charge, _ = _read_net_charge_for_residue(residue_dir, mol2_path)
         print(f"[{resname}] using net charge = {net_charge}")
@@ -227,25 +227,25 @@ def run_antechamber_for_all(
         if fix_backbone_atom_types_in_prepin(str(prepin_file)):
             print(f"[{resname}] corrected backbone atom types in PREPIN file")
 
-        # 4) parmchk2 (backbone + sidechain frcmods)
-        parmchk_backbone_cmd = [
+        # 4) parmchk2 (forcefield1 + forcefield2 frcmods)
+        parmchk_forcefield1_cmd = [
             "parmchk2", "-i", ac_output.name, "-f", "ac",
-            "-o", backbone_frcmod_output.name, "-a", "Y",
-            "-p", backbone_parm_path,
+            "-o", ff_frcmod_output.name, "-a", "Y",
+            "-p", ff_parm_path,
         ]
-        parmchk_sidechain_cmd = [
+        parmchk_forcefield2_cmd = [
             "parmchk2", "-i", ac_output.name, "-f", "ac",
             "-o", gaff_frcmod_output.name, "-a", "Y",
             "-p", gaff_parm_path,
         ]
 
-        if not _run(parmchk_backbone_cmd, residue_dir, log_file):
-            print(f"[{resname}] FAILED at parmchk2 (backbone)")
-            failed.append((resname, "parmchk2 backbone"))
+        if not _run(parmchk_forcefield1_cmd, residue_dir, log_file):
+            print(f"[{resname}] FAILED at parmchk2 (forcefield1)")
+            failed.append((resname, "parmchk2 forcefield1"))
             continue
-        if not _run(parmchk_sidechain_cmd, residue_dir, log_file):
-            print(f"[{resname}] FAILED at parmchk2 (sidechain)")
-            failed.append((resname, "parmchk2 sidechain"))
+        if not _run(parmchk_forcefield2_cmd, residue_dir, log_file):
+            print(f"[{resname}] FAILED at parmchk2 (forcefield2)")
+            failed.append((resname, "parmchk2 forcefield2"))
             continue
 
         # 5) tleap -> .lib + .prmtop + .inpcrd
@@ -256,9 +256,9 @@ def run_antechamber_for_all(
         leap_script = residue_dir / "leap.in"
         leap_script.write_text(
             (
-                f"source leaprc.protein.{backbone}\n"
-                f"source leaprc.{sidechain}\n"
-                f"loadamberparams {backbone_frcmod_output.name}\n"
+                f"source leaprc.protein.{forcefield1}\n"
+                f"source leaprc.{forcefield2}\n"
+                f"loadamberparams {ff_frcmod_output.name}\n"
                 f"loadamberparams {gaff_frcmod_output.name}\n"
                 f"{resname} = loadmol2 {mol2_path.name}\n"
                 f"saveoff {resname} {lib_file.name}\n"

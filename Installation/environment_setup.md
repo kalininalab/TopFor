@@ -81,6 +81,16 @@ conda --version
 
 If it prints a version number, Conda is working.
 
+### Linux line-ending check
+
+The shell script must use Unix **LF** line endings. If you see an error such as `syntax error near unexpected token $'\r'`, convert it before running:
+
+```bash
+sed -i 's/\r$//' setup_env.sh
+```
+
+The corrected TopFor setup files are stored with LF line endings.
+
 ---
 
 ## 4. Create the TopFor environment
@@ -143,6 +153,7 @@ For normal TopFor usage, this is enough:
 ✓ prepgen
 ✓ parmchk2
 ✓ tleap
+✓ sqm
 ✓ pymol
 ```
 
@@ -360,7 +371,7 @@ conda env update -f environment.yml --prune
 If you installed xTB manually, set this variable:
 
 ```bash
-export NCAA_XTB_EXE="/path/to/xtb"
+export NSAA_XTB_EXE="/path/to/xtb"
 ```
 
 Use the real path to your `xtb` file.
@@ -379,9 +390,9 @@ Example:
 export ORCA_DIR="$HOME/software/orca_6_1_1_linux_x86-64_shared_openmpi418_nodmrg"
 export MULTIWFN_DIR="$HOME/software/Multiwfn_2026.3.27_bin_Linux_noGUI"
 
-export NCAA_ORCA_EXE="$ORCA_DIR/orca"
-export NCAA_ORCA_2MKL_EXE="$ORCA_DIR/orca_2mkl"
-export NCAA_MULTIWFN_EXE="$MULTIWFN_DIR/Multiwfn_noGUI"
+export NSAA_ORCA_EXE="$ORCA_DIR/orca"
+export NSAA_ORCA_2MKL_EXE="$ORCA_DIR/orca_2mkl"
+export NSAA_MULTIWFN_EXE="$MULTIWFN_DIR/Multiwfn_noGUI"
 
 export Multiwfnpath="$MULTIWFN_DIR"
 
@@ -392,9 +403,9 @@ export LD_LIBRARY_PATH="$ORCA_DIR/lib:$LD_LIBRARY_PATH"
 Now test:
 
 ```bash
-"$NCAA_ORCA_EXE" --version
-test -x "$NCAA_ORCA_2MKL_EXE" && echo "orca_2mkl found"
-test -x "$NCAA_MULTIWFN_EXE" && echo "Multiwfn_noGUI found"
+"$NSAA_ORCA_EXE" --version
+test -x "$NSAA_ORCA_2MKL_EXE" && echo "orca_2mkl found"
+test -x "$NSAA_MULTIWFN_EXE" && echo "Multiwfn_noGUI found"
 ```
 
 Then run the setup check again:

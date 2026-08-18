@@ -8,11 +8,18 @@ Invoked as a subprocess (so it runs inside the PyMOL Python interpreter):
 
     python pdb_to_mol2.py <input.pdb> <output.mol2>
 
+Important
+---------
+This conversion intentionally preserves the PDB protonation state.  Hydrogen
+removal/re-addition is deferred to ``capping.py``, where the requested net
+charge is already known and the pipeline can correct PyMOL protonation mistakes.
+
 Exit codes
 ----------
     0  success
     1  bad CLI arguments or missing input
     2  PyMOL not importable in the current interpreter
+    3  PyMOL load/save failed or produced an invalid/empty MOL2
 """
 from __future__ import annotations
 
@@ -44,12 +51,64 @@ def main() -> int:
         print(f"ERROR: {input_pdb} not found!")
         return 1
 
-    pymol.cmd.reinitialize()
-    pymol.cmd.load(str(input_pdb), "prot")
-    pymol.cmd.remove("hydro")
-    pymol.cmd.h_add("prot")
-    pymol.cmd.save(str(output_mol2), "prot")
-    print(f"Conversion successful: {output_mol2}")
+    output_mol2.parent.mkdir(parents=True, exist_ok=True)
+
+    try:
+        pymol.cmd.reinitialize()
+        pymol.cmd.load(str(input_pdb), "prot")
+
+        atom_count = int(pymol.cmd.count_atoms("prot"))
+        if atom_count <= 0:
+            print(f"ERROR: PyMOL loaded no atoms from {input_pdb}")
+            return 3
+
+        # Do NOT remove/re-add hydrogens here.  At this point the requested
+        # residue net charge has not been resolved yet, and PyMOL h_add can
+        # change protonation states (especially carboxylates).  capping.py
+        # performs the hydrogen reset later, after the target charge is known.
+        pymol.cmd.save(str(output_mol2), "prot")
+    except Exception as exc:
+        print(f"ERROR: PyMOL PDB->MOL2 conversion failed: {exc}")
+        return 3
+
+    if not output_mol2.exists() or output_mol2.stat().st_size == 0:
+        print(f"ERROR: PyMOL did not create a non-empty MOL2: {output_mol2}")
+        return 3
+
+    try:
+        text = output_mol2.read_text(encoding="utf-8", errors="replace")
+    except Exception as exc:
+        print(f"ERROR: Could not read generated MOL2 {output_mol2}: {exc}")
+        return 3
+
+
+    if "@<TRIPOS>ATOM" not in text or "@<TRIPOS>BOND" not in text:
+        print(
+            "ERROR: Generated file is not a complete Tripos MOL2 "
+            f"(missing ATOM/BOND section): {output_mol2}"
+        )
+        return 3
+
+    atom_lines = []
+    in_atoms = False
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("@<TRIPOS>ATOM"):
+            in_atoms = True
+            continue
+        if stripped.startswith("@<TRIPOS>") and in_atoms:
+            break
+        if in_atoms and stripped:
+            atom_lines.append(line)
+
+    if not atom_lines:
+        print(f"ERROR: Generated MOL2 contains no atom records: {output_mol2}")
+        return 3
+
+    print(
+        f"Conversion successful: {output_mol2} "
+        f"({len(atom_lines)} atoms; protonation preserved from PDB)"
+    )
     return 0
 
 

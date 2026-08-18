@@ -9,7 +9,7 @@ every non-standard residue.
 Pipeline:
     1. Convert the original peptide MOL2 -> PDB (PyMOL subprocess).
     2. Build a tleap script that:
-         * sources leaprc.protein.<backbone> and leaprc.<sidechain>,
+         * sources leaprc.protein.<forcefield1> and leaprc.<forcefield2>,
          * loadamberparams every NSAA frcmod,
          * loadamberprep every NSAA .prepin    <-- intentional, NOT loadoff
                                                   on the .lib (those carry
@@ -68,8 +68,8 @@ def _mol2_to_pdb(mol2_path: Path, pdb_path: Path, log_file: Path) -> bool:
 def _collect_residue_artifacts(
     out_base: Path,
     resnames: Iterable[str],
-    backbone: str,
-    sidechain: str,
+    forcefield1: str,
+    forcefield2: str,
 ) -> dict:
     """For each resname, locate its .prepin and both .frcmod files."""
     prepins: list[Path] = []
@@ -83,8 +83,8 @@ def _collect_residue_artifacts(
             continue
 
         prepin = residue_dir / f"{resname}.prepin"
-        bb_frcmod = residue_dir / f"{resname}_{backbone}.frcmod"
-        sc_frcmod = residue_dir / f"{resname}_{sidechain}.frcmod"
+        bb_frcmod = residue_dir / f"{resname}_{forcefield1}.frcmod"
+        sc_frcmod = residue_dir / f"{resname}_{forcefield2}.frcmod"
 
         if not prepin.exists():
             missing.append(resname)
@@ -104,8 +104,8 @@ def assemble_peptide(
     successful_resnames: Iterable[str],
     out_base: str,
     *,
-    backbone: str = "ff19SB",
-    sidechain: str = "gaff2",
+    forcefield1: str = "ff19SB",
+    forcefield2: str = "gaff2",
     generate_gmx: bool = False,
 ) -> dict:
     """
@@ -151,7 +151,7 @@ def assemble_peptide(
 
     # ---- 2) Locate per-residue artifacts ----
     artifacts = _collect_residue_artifacts(
-        out_base_p, successful_resnames, backbone, sidechain,
+        out_base_p, successful_resnames, forcefield1, forcefield2,
     )
 
     # ---- 3) Build & run tleap ----
@@ -160,8 +160,8 @@ def assemble_peptide(
     leap_script = asm_dir / "peptide_leap.in"
 
     lines: list[str] = []
-    lines.append(f"source leaprc.protein.{backbone}")
-    lines.append(f"source leaprc.{sidechain}")
+    lines.append(f"source leaprc.protein.{forcefield1}")
+    lines.append(f"source leaprc.{forcefield2}")
 
     for frcmod in artifacts["frcmods"]:
         lines.append(f"loadamberparams {frcmod.resolve()}")
